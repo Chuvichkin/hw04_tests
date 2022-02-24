@@ -14,7 +14,7 @@ class StaticURLTests(TestCase):
         """Проверка шаблона для адреса /page/about/."""
         response = self.guest_client.get('/page/about/author/')
         self.assertTemplateUsed(response, 'about/author.html')
-    
+
     def test_about_tech_url_exists_at_desired_location(self):
         """Проверка доступности адреса /page/about/."""
         response = self.guest_client.get('/page/about/')
