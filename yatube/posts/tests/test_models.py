@@ -35,9 +35,7 @@ class PostModelTest(TestCase):
         post = PostModelTest.post
         field_verboses = {
             'text': 'Текст поста',
-            'pub_date': 'Дата публикации',
-            'author': 'Автор',
-            'group': 'Группа',
+            'group': 'Группа'
         }
         for field, expected_value in field_verboses.items():
             with self.subTest(field=field):

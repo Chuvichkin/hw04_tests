@@ -63,5 +63,5 @@ class PostFormTests(TestCase):
             follow=True
         )
         self.assertEqual(Post.objects.count(), posts_count)
-        response = self.authorized_client.get('/create/')
-        self.assertRedirects(response, '/admin/login/?next=/create/')
+        response = self.guest_client.get('/create/')
+        self.assertRedirects(response, '/auth/login/?next=/create/')
