@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 
+from http import HTTPStatus
 from posts.models import Post, Group
-
 User = get_user_model()
 
 
@@ -11,19 +11,32 @@ class PostURLTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        User.objects.create(username="Test_User",)
+        cls.user = User.objects.create(username="Test_User",)
 
-        Group.objects.create(
+        cls.group = Group.objects.create(
+            id="10",
             title="группа",
             slug="one_group",
             description="проверка описания",
         )
 
-        Post.objects.create(
+        cls.post = Post.objects.create(
             text='Тестовый текст',
             author=User.objects.get(username="Test_User"),
             group=Group.objects.get(title="группа"),
-            # post_id='test-post_id'
+        )
+
+        cls.post_url = f'/posts/{cls.post.id}/'
+        cls.post_edit_url = f'/posts/{cls.post.id}/edit/'
+        cls.public_urls = (
+            ('/', 'index.html'),
+            (f'/group/{cls.group.slug}/', 'group.html'),
+            (f'/profile/{cls.user.username}/', 'profile.html'),
+            (cls.post_url, 'post.html'),
+        )
+        cls.private_urls = (
+            ('/create/', 'create_post.html'),
+            (cls.post_edit_url, 'create_post.html')
         )
 
     def setUp(self):
@@ -35,43 +48,23 @@ class PostURLTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     # Проверяем общедоступные страницы
-    def test_home_url_exists_at_desired_location(self):
-        """Страница / доступна любому пользователю."""
-        response = self.guest_client.get('/')
-        self.assertEqual(response.status_code, 200)
+    def test_public_pages(self):
+        for data in self.public_urls:
+            print(data[0])
+            response = self.guest_client.get(data[0])
+            self.assertEqual(response.status_code, 200)
 
-    def test_group_url_exists_at_desired_location(self):
-        """Страница /group/one_group/ доступна любому пользователю."""
-        response = self.guest_client.get('/group/one_group/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_user_profile_url_exists_at_desired_location(self):
-        """Страница /profile/Test_User/ доступна любому пользователю."""
-        response = self.guest_client.get('/profile/Test_User/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_post_url_exists_at_desired_location(self):
-        """Страница /posts/1/ доступна любому пользователю."""
-        response = self.guest_client.get('/posts/1/')
-        self.assertEqual(response.status_code, 200)
-
-    # Проверяем доступность страниц для авторизованного пользователя
-    def test_post_create_url_exists_at_desired_location(self):
-        """Страница /create/ доступна авторизованному пользователю."""
-        response = self.authorized_client.get('/create/')
-        self.assertEqual(response.status_code, 200)
-
-    # Проверяем доступность страниц для АВТОРА?
-    def test_post_edit_url_avaliable_only_author(self):
-        """Страница /posts/test-post_id/edit/ доступна АВТОРУ."""
-        response = self.authorized_client.get('/posts/1/edit/')
-        self.assertEqual(response.status_code, 200)
+    # Проверяем доступ для авторизованного пользователя и автора
+    def test_private_pages(self):
+        for data in self.private_urls:
+            response = self.authorized_client.get(data[0])
+            self.assertEqual(response.status_code, HTTPStatus.OK)
 
     # Проверяем статус 404 для авторизованного пользователя
     def test_task_list_url_redirect_anonymous(self):
         """Страница /unexisting_page/ не существует."""
         response = self.authorized_client.get('/unexisting_page/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
     # Проверка вызываемых шаблонов для каждого адреса
     def test_urls_uses_correct_template(self):

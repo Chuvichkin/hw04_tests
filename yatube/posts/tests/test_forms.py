@@ -50,3 +50,18 @@ class PostFormTests(TestCase):
         )
         new_post = Post.objects.get(id=1)
         self.assertNotEqual(old_post.text, new_post.text)
+
+    def test_unauth_user_cant_publish_post(self):
+        posts_count = Post.objects.count()
+        form_data = {
+            'text': 'Тестовый текст',
+            'group': self.group.pk,
+        }
+        self.guest_client.post(
+            reverse('posts:post_create'),
+            data=form_data,
+            follow=True
+        )
+        self.assertEqual(Post.objects.count(), posts_count)
+        response = self.authorized_client.get('/create/')
+        self.assertRedirects(response, '/admin/login/?next=/create/')
